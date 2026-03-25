@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import medicalHero from '../assets/medical_team_hero.png';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -41,7 +42,7 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       {/* Left Branding Panel */}
-      <div className="auth-brand-panel">
+      <div className="auth-brand-panel" style={{ backgroundImage: `url(${medicalHero})`, backgroundSize: 'cover', backgroundPosition: 'center top' }}>
         <div className="brand-content">
           <div className="brand-logo">
             <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
