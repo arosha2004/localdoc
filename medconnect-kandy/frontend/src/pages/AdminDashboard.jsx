@@ -23,7 +23,12 @@ export default function AdminDashboard() {
         <div className="nav-right">
           <span className="nav-user-name">🔐 {user?.full_name}</span>
           <span className="role-chip role-chip-admin">Admin</span>
-          <button className="btn-logout" onClick={handleLogout}>Logout</button>
+          <button className="btn-logout" onClick={handleLogout}>
+            <svg viewBox="0 0 20 20" fill="currentColor" style={{ width: 14, height: 14 }}>
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1v-2a1 1 0 10-2 0v1H4V5h6v1a1 1 0 102 0V4a1 1 0 00-1-1H3zm13.707 5.293a1 1 0 010 1.414L14.414 12H10a1 1 0 110-2h4.414l-1.707-1.707a1 1 0 011.414-1.414l3 3z" clipRule="evenodd"/>
+            </svg>
+            Logout
+          </button>
         </div>
       </nav>
 

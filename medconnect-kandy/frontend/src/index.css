@@ -763,21 +763,34 @@ body {
 .role-chip-staff   { background: #ecfdf5; color: #065f46; }
 
 .btn-logout {
-  padding: 0.4rem 1rem;
-  border: 1.5px solid var(--slate-200);
-  background: white;
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--slate-600);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1.1rem;
+  border: 1.5px solid #fca5a5;
+  background: linear-gradient(135deg, #fff5f5, #fff);
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #dc2626;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  letter-spacing: 0.02em;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s;
   font-family: inherit;
+  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.1);
 }
 
 .btn-logout:hover {
-  border-color: var(--red-500);
-  color: var(--red-500);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-logout:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
 }
 
 .dashboard-main {
