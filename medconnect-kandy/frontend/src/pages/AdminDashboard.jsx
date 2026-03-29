@@ -1,13 +1,29 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { getCenters, saveCenters } from '../api/centersData';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [centers, setCenters] = useState([]);
+  const [activeView, setActiveView] = useState('overview'); // 'overview' | 'management'
+
+  useEffect(() => {
+    setCenters(getCenters());
+  }, []);
 
   const handleLogout = () => {
     logout();
     navigate('/admin/login', { replace: true });
+  };
+
+  const toggleDoctorAvailability = (id) => {
+    const updated = centers.map(c => 
+      c.id === id ? { ...c, doctor_available: !c.doctor_available } : c
+    );
+    setCenters(updated);
+    saveCenters(updated);
   };
 
   return (
@@ -32,26 +48,95 @@ export default function AdminDashboard() {
         </div>
       </nav>
 
+      {/* Admin Tabs */}
+      <div className="patient-tabs">
+        <button 
+          className={`patient-tab ${activeView === 'overview' ? 'patient-tab-active' : ''}`}
+          onClick={() => setActiveView('overview')}
+        >
+          📊 Stats & Overview
+        </button>
+        <button 
+          className={`patient-tab ${activeView === 'management' ? 'patient-tab-active' : ''}`}
+          onClick={() => setActiveView('management')}
+        >
+          🏥 Clinic Management
+        </button>
+      </div>
+
       <main className="dashboard-main">
-        <div className="dashboard-welcome">
-          <h1>Admin Dashboard</h1>
-          <p>System Administrator control panel. Manage clinics, users, and system settings.</p>
-        </div>
-        <div className="dashboard-cards">
-          {[
-            { icon: '🏥', title: 'Clinic Approvals', desc: 'Review and verify new clinic registrations', soon: true },
-            { icon: '👥', title: 'User Management', desc: 'Manage patients, staff, and admin accounts', soon: false },
-            { icon: '📊', title: 'System Analytics', desc: 'View platform usage and metrics', soon: true },
-            { icon: '⚙️', title: 'System Settings', desc: 'Configure platform behavior', soon: true },
-          ].map((card) => (
-            <div key={card.title} className="dashboard-card">
-              <span className="card-icon">{card.icon}</span>
-              <h3>{card.title}</h3>
-              <p>{card.desc}</p>
-              {card.soon && <span className="coming-soon-tag">Coming Soon</span>}
+        {activeView === 'overview' ? (
+          <>
+            <div className="dashboard-welcome">
+              <h1>Admin Dashboard</h1>
+              <p>System Administrator control panel. Manage clinics and doctor availability live.</p>
             </div>
-          ))}
-        </div>
+            <div className="dashboard-cards">
+              {[
+                { icon: '🏥', title: 'Clinic Management', desc: 'Manage clinics and doctor availability live', action: () => setActiveView('management') },
+                { icon: '👥', title: 'User Management', desc: 'Manage patients and staff accounts', soon: true },
+                { icon: '📈', title: 'Usage Metrics', desc: 'View platform traffic and search data', soon: true },
+                { icon: '⚙️', title: 'Settings', desc: 'Configure system-wide parameters', soon: true },
+              ].map((card) => (
+                <div 
+                  key={card.title} 
+                  className="dashboard-card" 
+                  onClick={card.action} 
+                  style={card.action ? { cursor: 'pointer' } : {}}
+                >
+                  <span className="card-icon">{card.icon}</span>
+                  <h3>{card.title}</h3>
+                  <p>{card.desc}</p>
+                  {card.soon && <span className="coming-soon-tag">Coming Soon</span>}
+                  {card.action && <span className="coming-soon-tag" style={{ background: 'var(--blue-600)', color: 'white' }}>Open →</span>}
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="mc-section">
+            <div className="mc-section-header">
+              <div>
+                <h1 className="mc-section-title">Clinic Management</h1>
+                <p className="mc-section-sub">Update medical center status and doctor availability in real-time</p>
+              </div>
+            </div>
+
+            <div className="admin-mc-list">
+              {centers.map(center => (
+                <div key={center.id} className="admin-mc-row">
+                  <div className="admin-mc-info">
+                    <h4>{center.name}</h4>
+                    <p>{center.area} · {center.type}</p>
+                    <div className={center.doctor_available ? 'mc-doctor-badge doctor-available-badge' : 'mc-doctor-badge doctor-not-available-badge'}>
+                      <span className="doctor-status-dot"></span>
+                      Doctor is {center.doctor_available ? 'Available' : 'NOT Available'}
+                    </div>
+                  </div>
+                  <div className="admin-mc-controls">
+                    <div className="toggle-container" onClick={() => toggleDoctorAvailability(center.id)}>
+                      <span className="toggle-label">Doctor Present?</span>
+                      <label className="switch">
+                        <input 
+                          type="checkbox" 
+                          checked={center.doctor_available} 
+                          onChange={() => {}} // Handled by container click
+                        />
+                        <span className="switch-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+              <button className="mc-btn-reset" onClick={() => setActiveView('overview')}>
+                Done
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

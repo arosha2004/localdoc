@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'http://192.168.8.146:8000'; // Mobile-friendly address
 
 const api = axios.create({
   baseURL: API_BASE,
