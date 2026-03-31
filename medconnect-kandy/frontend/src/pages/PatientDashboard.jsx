@@ -192,12 +192,12 @@ export default function PatientDashboard() {
       {/* Navbar - Premium Glassmorphism */}
       <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] h-20 px-6 md:px-10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
             <svg viewBox="0 0 32 32" fill="none" className="w-6 h-6">
               <path d="M16 8V24M8 16H24" stroke="white" strokeWidth="3" strokeLinecap="round" />
             </svg>
           </div>
-          <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 tracking-tight">
+          <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 tracking-tight">
             LocalDoc Connect
           </span>
         </div>
