@@ -21,10 +21,10 @@ function StarRating({ rating }) {
 
 function MedicalCenterCard({ center, onViewMap }) {
   const isGovt = center.tag === 'govt';
-  
+
   return (
     <div className={`relative bg-white/70 backdrop-blur-xl rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/80 hover:shadow-[0_20px_40px_rgb(59,130,246,0.1)] hover:border-blue-100 hover:-translate-y-1 transition-all duration-300 flex flex-col gap-5 ${!center.available ? 'opacity-75 grayscale-[0.2]' : ''}`}>
-      
+
       {/* Decorative Top Gradient Line */}
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-0 transition-opacity duration-300 hover:opacity-100 rounded-t-[24px]"></div>
 
@@ -109,7 +109,7 @@ function MedicalCenterCard({ center, onViewMap }) {
             {center.available ? 'Open' : 'Closed'}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button onClick={() => onViewMap(center)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white shadow-sm text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all border border-slate-200" title="View on Map">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -130,7 +130,7 @@ function MedicalCenterCard({ center, onViewMap }) {
   );
 }
 
-// ── Main Dashboard Component ───────────────────────────────────────────────────
+// ── Main Dashboard Component ───
 export default function PatientDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -176,11 +176,14 @@ export default function PatientDashboard() {
   }, [centers, searchQuery, filterType, filterAvail]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] relative overflow-hidden font-sans">
+    <div className="min-h-screen relative font-sans bg-cover bg-center bg-fixed" style={{ backgroundImage: "url('/dashboard_bg.png')" }}>
+      {/* Content Legibility Overlay */}
+      <div className="fixed inset-0 bg-white/60 backdrop-blur-[4px] pointer-events-none z-0"></div>
+
       {/* Premium Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-100/50 to-transparent pointer-events-none"></div>
-      <div className="absolute -top-[200px] -right-[200px] w-[600px] h-[600px] bg-blue-400/10 rounded-full blur-[80px] pointer-events-none"></div>
-      <div className="absolute top-[100px] -left-[100px] w-[400px] h-[400px] bg-indigo-400/10 rounded-full blur-[60px] pointer-events-none"></div>
+      <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-100/60 to-transparent pointer-events-none z-0"></div>
+      <div className="absolute -top-[200px] -right-[200px] w-[600px] h-[600px] bg-blue-500/15 rounded-full blur-[80px] pointer-events-none z-0 fixed"></div>
+      <div className="absolute top-[100px] -left-[100px] w-[400px] h-[400px] bg-indigo-500/15 rounded-full blur-[60px] pointer-events-none z-0 fixed"></div>
 
       {selectedCenter && (
         <MapModal
@@ -216,13 +219,13 @@ export default function PatientDashboard() {
       {/* Tab Nav */}
       <div className="flex justify-center mt-6 z-10 relative">
         <div className="bg-white/60 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-white/80 inline-flex">
-          <button 
+          <button
             onClick={() => setActiveTab('home')}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${activeTab === 'home' ? 'bg-white text-blue-700 shadow-sm border border-slate-100' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <span className="text-lg">🏠</span> Home
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('centers')}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${activeTab === 'centers' ? 'bg-white text-blue-700 shadow-sm border border-slate-100' : 'text-slate-500 hover:text-slate-800'}`}
           >
@@ -232,7 +235,7 @@ export default function PatientDashboard() {
       </div>
 
       <main className="max-w-[1280px] mx-auto px-6 py-10 relative z-10">
-        
+
         {/* ── HOME TAB ── */}
         {activeTab === 'home' && (
           <div className="animate-fade-in-up">
@@ -240,7 +243,7 @@ export default function PatientDashboard() {
               <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-4">Hello, {user?.full_name?.split(' ')[0]}!</h1>
               <p className="text-lg text-slate-500 font-medium">Use the dashboard to find top-rated medical centers in Kandy and book appointments effortlessly.</p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 { icon: '🏥', title: 'Find Clinics', desc: 'Discover verified OPD centers near you in Kandy', action: () => setActiveTab('centers'), color: 'from-blue-500 to-indigo-500' },
@@ -254,7 +257,7 @@ export default function PatientDashboard() {
                   </div>
                   <h3 className="text-xl font-extrabold text-slate-900 mb-2">{card.title}</h3>
                   <p className="text-sm font-medium text-slate-500 leading-relaxed mb-6">{card.desc}</p>
-                  
+
                   {card.soon ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 rounded-lg text-xs font-bold uppercase tracking-wider">
                       Coming Soon
@@ -273,7 +276,7 @@ export default function PatientDashboard() {
         {/* ── MEDICAL CENTERS TAB ── */}
         {activeTab === 'centers' && (
           <div className="animate-fade-in-up">
-            
+
             {/* Elegant Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
               <div>
@@ -284,7 +287,7 @@ export default function PatientDashboard() {
                 <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight mb-2">Medical Centers</h1>
                 <p className="text-base text-slate-500 font-medium">Showing live doctor availability for OPD visits</p>
               </div>
-              
+
               <div className="flex items-center bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-white">
                 <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mr-4">
                   <span className="text-2xl font-black text-blue-600">{centers.filter(c => c.doctor_available).length}</span>
@@ -311,19 +314,19 @@ export default function PatientDashboard() {
                 />
                 {searchQuery && (
                   <button className="absolute right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors" onClick={() => setSearchQuery('')}>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 )}
               </div>
-              
+
               <div className="w-full md:w-[1px] h-[1px] md:h-12 bg-slate-200/80 mx-2"></div>
-              
+
               <div className="w-full md:w-auto flex items-center px-4 py-2">
                 <div className="flex flex-col w-full md:w-40">
                   <label className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1">Clinic Type</label>
-                  <select 
-                    value={filterType} 
-                    onChange={e => setFilterType(e.target.value)} 
+                  <select
+                    value={filterType}
+                    onChange={e => setFilterType(e.target.value)}
                     className="w-full bg-transparent border-none outline-none text-slate-800 text-base font-bold cursor-pointer focus:ring-0 appearance-none"
                     style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0 center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
                   >
@@ -361,7 +364,7 @@ export default function PatientDashboard() {
           </div>
         )}
       </main>
-      
+
       {/* Global CSS for Animations */}
       <style>{`
         @keyframes fadeInUp {
