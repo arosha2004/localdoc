@@ -142,10 +142,14 @@ export default function PatientDashboard() {
   const [selectedCenter, setSelectedCenter] = useState(null);
 
   useEffect(() => {
-    setCenters(getCenters());
-    const interval = setInterval(() => {
-      setCenters(getCenters());
-    }, 5000);
+    const fetchCenters = async () => {
+      const data = await getCenters();
+      setCenters(data);
+    };
+    fetchCenters();
+    
+    // Polling every 10 seconds for real-time updates
+    const interval = setInterval(fetchCenters, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -337,7 +341,6 @@ export default function PatientDashboard() {
                     style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0 center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
                   >
                     <option value="all">All Types</option>
-                    <option value="govt">Government Hubs</option>
                     <option value="private">Private Clinics</option>
                   </select>
                 </div>
@@ -410,6 +413,10 @@ export default function PatientDashboard() {
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
                       <input type="text" defaultValue={user?.full_name} className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-white transition-all shadow-sm" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+                      <input type="email" defaultValue={user?.email} className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-white transition-all shadow-sm" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Phone Number</label>

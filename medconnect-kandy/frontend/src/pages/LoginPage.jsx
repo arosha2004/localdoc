@@ -175,12 +175,7 @@ export default function LoginPage() {
             <Link to="/register" className="auth-link">Create one free</Link>
           </p>
 
-          <div className="auth-divider"><span>or continue as</span></div>
-          <div className="auth-role-links">
-            <Link to="/login" className="role-badge role-patient">Patient</Link>
-            <Link to="/admin/login" className="role-badge role-admin">Admin</Link>
-            <Link to="/staff/login" className="role-badge role-staff">Clinic Staff</Link>
-          </div>
+
         </div>
       </div>
     </div>

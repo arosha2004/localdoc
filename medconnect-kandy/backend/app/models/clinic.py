@@ -1,16 +1,21 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, declarative_base
-from dotenv import load_dotenv
-import os
+from sqlalchemy import Column, Integer, String, Boolean, Float, JSON
+from app.database import Base
 
-load_dotenv()
+class MedicalCenter(Base):
+    __tablename__ = "medical_centers"
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-engine = create_async_engine(DATABASE_URL, echo=True)
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-Base = declarative_base()
-
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        yield session
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    type = Column(String(100), nullable=False)
+    area = Column(String(100), nullable=False)
+    address = Column(String(255), nullable=False)
+    phone = Column(String(50), nullable=False)
+    hours = Column(String(100), nullable=False)
+    services = Column(JSON, nullable=False)  # Store list as JSON
+    rating = Column(Float, nullable=False)
+    distance = Column(String(50), nullable=False)
+    available = Column(Boolean, default=True)
+    tag = Column(String(50), nullable=False)
+    lat = Column(Float, nullable=False)
+    lng = Column(Float, nullable=False)
+    doctor_available = Column(Boolean, default=False)

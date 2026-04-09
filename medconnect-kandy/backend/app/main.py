@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from app.database import engine, Base, get_db
-from app.routers import auth
+
 
 app = FastAPI(
     title="LocalDoc Connect API",
@@ -19,8 +19,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.routers import auth, clinics
+
 # Register routers
 app.include_router(auth.router)
+app.include_router(clinics.router)
 
 @app.on_event("startup")
 async def startup():

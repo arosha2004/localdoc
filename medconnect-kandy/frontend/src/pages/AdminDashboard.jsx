@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getCenters, saveCenters } from '../api/centersData';
+import { getCenters, updateCenterDoctorAvailability } from '../api/centersData';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -10,7 +10,11 @@ export default function AdminDashboard() {
   const [activeView, setActiveView] = useState('overview'); // 'overview' | 'management'
 
   useEffect(() => {
-    setCenters(getCenters());
+    const fetchCenters = async () => {
+      const data = await getCenters();
+      setCenters(data);
+    };
+    fetchCenters();
   }, []);
 
   const handleLogout = () => {
@@ -18,12 +22,24 @@ export default function AdminDashboard() {
     navigate('/admin/login', { replace: true });
   };
 
-  const toggleDoctorAvailability = (id) => {
+  const toggleDoctorAvailability = async (id) => {
+    const center = centers.find(c => c.id === id);
+    if (!center) return;
+    
+    // Optimistic update
     const updated = centers.map(c => 
       c.id === id ? { ...c, doctor_available: !c.doctor_available } : c
     );
     setCenters(updated);
-    saveCenters(updated);
+    
+    // API call
+    try {
+      await updateCenterDoctorAvailability(id, !center.doctor_available);
+    } catch (err) {
+      // Revert on error
+      console.error("Failed to update status, reverting...");
+      setCenters(centers);
+    }
   };
 
   return (
