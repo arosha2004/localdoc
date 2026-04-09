@@ -231,6 +231,12 @@ export default function PatientDashboard() {
           >
             <span className="text-lg">🏥</span> Medical Centers
           </button>
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${activeTab === 'profile' ? 'bg-white text-amber-600 shadow-sm border border-slate-100' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            <span className="text-lg">👤</span> Profile
+          </button>
         </div>
       </div>
 
@@ -249,7 +255,7 @@ export default function PatientDashboard() {
                 { icon: '🏥', title: 'Find Clinics', desc: 'Discover verified OPD centers near you in Kandy', action: () => setActiveTab('centers'), color: 'from-blue-500 to-indigo-500' },
                 { icon: '📅', title: 'My Appointments', desc: 'View and manage your upcoming bookings', soon: true, color: 'from-emerald-400 to-teal-500' },
                 { icon: '💬', title: 'Online Consult', desc: 'Request a basic online consultation', soon: true, color: 'from-purple-500 to-fuchsia-500' },
-                { icon: '👤', title: 'My Profile', desc: 'Update your account details and health info', soon: true, color: 'from-amber-400 to-orange-500' },
+                { icon: '👤', title: 'My Profile', desc: 'Update your account details and health info', action: () => setActiveTab('profile'), color: 'from-amber-400 to-orange-500' },
               ].map((card) => (
                 <div key={card.title} onClick={card.action} className={`group bg-white/80 backdrop-blur-xl border border-white rounded-[24px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ${card.action ? 'cursor-pointer hover:-translate-y-2 hover:shadow-[0_20px_40px_rgb(59,130,246,0.1)]' : 'opacity-80'}`}>
                   <div className={`w-16 h-16 rounded-[18px] bg-gradient-to-br ${card.color} flex items-center justify-center text-3xl mb-6 shadow-lg transform group-hover:scale-110 transition-transform`}>
@@ -361,6 +367,93 @@ export default function PatientDashboard() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── PROFILE TAB ── */}
+        {activeTab === 'profile' && (
+          <div className="animate-fade-in-up max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full shadow-md shadow-orange-500/20 mb-4">
+                  <span className="text-lg">👤</span>
+                  <span className="text-xs font-extrabold text-white uppercase tracking-wider">Your Profile</span>
+                </div>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight mb-2">Account Settings</h1>
+                <p className="text-base text-slate-500 font-medium">Manage your personal information and health details</p>
+              </div>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-2xl border border-white rounded-[32px] p-8 md:p-12 shadow-[0_20px_60px_rgb(0,0,0,0.05)] relative overflow-hidden">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-amber-200/40 to-orange-300/40 rounded-full blur-[60px] pointer-events-none"></div>
+              
+              <div className="flex flex-col md:flex-row gap-12 relative z-10">
+                {/* Avatar Section */}
+                <div className="flex flex-col items-center shrink-0 w-full md:w-auto">
+                  <div className="w-32 h-32 rounded-[32px] bg-gradient-to-br from-amber-100 to-orange-100 p-1 shadow-lg relative group cursor-pointer mb-6 transform transition-all hover:scale-105">
+                    <div className="w-full h-full bg-white rounded-[28px] border-4 border-white flex items-center justify-center overflow-hidden relative">
+                      <span className="text-5xl">👤</span>
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      </div>
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-extrabold text-slate-800 text-center">{user?.full_name}</h3>
+                  <p className="text-sm font-medium text-slate-500 mb-4 text-center">{user?.email}</p>
+                  <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold border border-amber-100 shadow-sm">Patient Account</span>
+                </div>
+
+                {/* Form Section */}
+                <div className="flex-1 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
+                      <input type="text" defaultValue={user?.full_name} className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-white transition-all shadow-sm" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Phone Number</label>
+                      <input type="tel" defaultValue={user?.phone || ''} placeholder="+94 7X XXX XXXX" className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-white transition-all shadow-sm" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Date of Birth</label>
+                      <input type="date" className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-white transition-all shadow-sm" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Blood Group</label>
+                      <div className="relative">
+                        <select className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-white transition-all appearance-none cursor-pointer shadow-sm">
+                          <option value="">Select Blood Group</option>
+                          <option value="A+">A+</option>
+                          <option value="A-">A-</option>
+                          <option value="B+">B+</option>
+                          <option value="B-">B-</option>
+                          <option value="O+">O+</option>
+                          <option value="O-">O-</option>
+                          <option value="AB+">AB+</option>
+                          <option value="AB-">AB-</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Allergies / Special Notes</label>
+                    <textarea rows="3" placeholder="List any allergies, medications, or specific health conditions..." className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:bg-white transition-all resize-none shadow-sm"></textarea>
+                  </div>
+
+                  <div className="pt-6 border-t border-slate-100/60 flex justify-end gap-3">
+                    <button className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
+                    <button className="px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 shadow-[0_8px_20px_rgba(245,158,11,0.3)] hover:shadow-[0_12px_25px_rgba(245,158,11,0.4)] hover:-translate-y-0.5 transition-all outline-none">
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
