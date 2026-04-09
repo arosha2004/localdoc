@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import api from '../api/axios';
 
 const AuthContext = createContext(null);
@@ -12,6 +12,31 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // On app startup, validate the stored token against the server.
+  // If it's expired or tampered with, silently log out so the user
+  // isn't stuck in a broken "logged in" state.
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setAuthLoading(false);
+      return;
+    }
+    api.get('/api/auth/me')
+      .then(({ data }) => {
+        // Refresh user object with latest data from server
+        localStorage.setItem('user', JSON.stringify(data));
+        setUser(data);
+      })
+      .catch(() => {
+        // Token is invalid or expired — clean up silently
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      })
+      .finally(() => setAuthLoading(false));
+  }, []);
 
   const login = useCallback(async (email, password) => {
     const { data } = await api.post('/api/auth/login', { email, password });
@@ -35,7 +60,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = { user, login, register, logout, isAuthenticated: !!user };
+  const value = { user, login, register, logout, isAuthenticated: !!user, authLoading };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

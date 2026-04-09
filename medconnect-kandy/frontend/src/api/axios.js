@@ -14,11 +14,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally — clear token and redirect to login
+// Handle 401 globally — clear token and redirect to login.
+// EXCEPTION: skip redirect for the /api/auth/me startup check,
+// which has its own error handler in AuthContext that silently
+// clears the stale token without disrupting the current page.
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const isStartupCheck = err.config?.url?.includes('/api/auth/me');
+    if (err.response?.status === 401 && !isStartupCheck) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
