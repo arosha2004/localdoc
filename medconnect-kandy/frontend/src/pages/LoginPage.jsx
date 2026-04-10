@@ -33,7 +33,9 @@ export default function LoginPage() {
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+      const errorMsg = err.response?.data?.detail || 'Login failed. Please check your credentials.';
+      setError(errorMsg);
+      window.alert(errorMsg); // This specifically triggers the pop-up
     } finally {
       setLoading(false);
     }
