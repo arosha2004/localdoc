@@ -25,7 +25,16 @@ export default function AdminLoginPage() {
       }
       navigate('/admin/dashboard', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Check your credentials.');
+      let errorMsg = 'Login failed. Check your credentials.';
+      if (err.response?.data?.detail) {
+        if (typeof err.response.data.detail === 'string') {
+          errorMsg = err.response.data.detail;
+        } else if (Array.isArray(err.response.data.detail)) {
+          errorMsg = err.response.data.detail.map(e => e.msg).join(', ');
+        }
+      }
+      setError(errorMsg);
+      window.alert(errorMsg);
     } finally {
       setLoading(false);
     }
