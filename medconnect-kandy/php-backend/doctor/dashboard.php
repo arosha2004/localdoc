@@ -18,6 +18,19 @@ if (isset($_GET['logout'])) {
     exit;
 }
 
+// Handle availability toggle
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_availability'])) {
+    header('Content-Type: application/json');
+    $stmt = $db->prepare("UPDATE users SET is_active = NOT is_active WHERE id = ? AND role = 'doctor'");
+    $stmt->execute([$user['id']]);
+    
+    // Update session
+    $_SESSION['user']['is_active'] = !$_SESSION['user']['is_active'];
+    
+    echo json_encode(['success' => true, 'is_active' => $_SESSION['user']['is_active']]);
+    exit;
+}
+
 // Get doctor's assigned patients (bookings)
 $stmt = $db->prepare("
     SELECT b.id, b.status, b.appointment_date, b.notes,
@@ -89,7 +102,11 @@ $success = isset($_GET['success']);
             <?php if ($user['specialization']): ?>
                 <span class="px-3 py-1 bg-green-600 rounded-lg text-xs font-bold"><?php echo htmlspecialchars($user['specialization']); ?></span>
             <?php endif; ?>
-            <a href="?logout=1" class="px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 font-semibold">Logout</a>
+            <button id="availabilityBtn" onclick="toggleAvailability()" class="px-4 py-2 <?php echo $user['is_active'] ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'; ?> rounded-xl font-semibold transition-all">
+                <span id="availabilityText"><?php echo $user['is_active'] ? 'Mark Unavailable' : 'Mark Available'; ?></span>
+            </button>
+            <a href="../patient-profile.php" class="px-4 py-2 bg-slate-700 rounded-xl hover:bg-slate-600 font-semibold">My Profile</a>
+            <a href="?logout=1" class="px-4 py-2 bg-slate-800 rounded-xl hover:bg-slate-900 font-semibold">Logout</a>
         </div>
     </nav>
 
@@ -175,6 +192,32 @@ $success = isset($_GET['success']);
         </div>
     </main>
 
+    <!-- Availability Confirmation Modal -->
+    <div id="availabilityModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Change Availability?</h3>
+                <p class="text-slate-600 text-sm">Are you sure you want to change your availability status? This will affect how patients see your profile.</p>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="cancelAvailabilityChange()" 
+                    class="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 font-semibold transition-all">
+                    Cancel
+                </button>
+                <button onclick="confirmAvailabilityChange()" 
+                    class="flex-1 px-4 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 font-semibold transition-all">
+                    Yes, Change It
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Prescription Modal -->
     <div id="prescriptionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -245,6 +288,41 @@ $success = isset($_GET['success']);
                 closePrescriptionModal();
             }
         });
+        
+        // Custom availability confirmation modal
+        function toggleAvailability() {
+            document.getElementById('availabilityModal').classList.remove('hidden');
+        }
+        
+        function confirmAvailabilityChange() {
+            const formData = new FormData();
+            formData.append('toggle_availability', '1');
+            
+            fetch('dashboard.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const btn = document.getElementById('availabilityBtn');
+                    const text = document.getElementById('availabilityText');
+                    
+                    if (data.is_active) {
+                        btn.className = 'px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl font-semibold transition-all';
+                        text.textContent = 'Mark Unavailable';
+                    } else {
+                        btn.className = 'px-4 py-2 bg-green-600 hover:bg-green-700 rounded-xl font-semibold transition-all';
+                        text.textContent = 'Mark Available';
+                    }
+                }
+                document.getElementById('availabilityModal').classList.add('hidden');
+            });
+        }
+        
+        function cancelAvailabilityChange() {
+            document.getElementById('availabilityModal').classList.add('hidden');
+        }
     </script>
 </body>
 </html>

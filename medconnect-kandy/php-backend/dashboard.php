@@ -43,6 +43,7 @@ if (isset($_GET['logout'])) {
         </div>
         <div class="flex items-center gap-4">
             <a href="opd-book.php" class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold">🎫 Book OPD Token</a>
+            <a href="patient-profile.php" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 font-semibold">My Profile</a>
             <span class="text-sm text-slate-600">👋 <?php echo htmlspecialchars($user['full_name']); ?></span>
             <a href="?logout=1" class="px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 font-semibold">Logout</a>
         </div>

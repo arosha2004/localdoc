@@ -79,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_doctor'])) {
         <div class="flex items-center gap-4">
             <span class="text-sm">🔐 <?php echo htmlspecialchars($user['full_name']); ?></span>
             <span class="px-3 py-1 bg-blue-600 rounded-lg text-xs font-bold">Admin</span>
+            <a href="profile.php" class="px-4 py-2 bg-slate-700 rounded-xl hover:bg-slate-600 font-semibold">Settings</a>
             <a href="?logout=1" class="px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 font-semibold">Logout</a>
         </div>
     </nav>
