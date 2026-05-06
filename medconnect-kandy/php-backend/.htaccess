@@ -1,5 +1,5 @@
 RewriteEngine On
-RewriteBase /medconnect-kandy/php-backend/
+RewriteBase /localdoc/medconnect-kandy/php-backend/
 
 # Route all requests to router.php (except existing files/directories)
 RewriteCond %{REQUEST_FILENAME} !-f

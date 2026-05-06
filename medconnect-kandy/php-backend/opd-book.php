@@ -44,6 +44,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_token'])) {
     } elseif ($session['current_token'] >= $session['max_tokens']) {
         $error = 'All tokens for this session have been booked';
     } else {
+        // Check for double booking - patient already has token for this session
+        $stmt = $db->prepare("
+            SELECT id FROM opd_tokens 
+            WHERE patient_id = ? AND session_id = ? AND status NOT IN ('cancelled', 'no-show')
+        ");
+        $stmt->execute([$user['id'], $session_id]);
+        $existingToken = $stmt->fetch();
+        
+        if ($existingToken) {
+            $error = 'You already have a token for this session';
+        } else {
         try {
             $db->beginTransaction();
             
@@ -54,8 +65,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_token'])) {
             // Generate token number
             $token_number = 'OPD-' . str_pad($session['current_token'] + 1, 3, '0', STR_PAD_LEFT);
             
-            // Calculate estimated waiting time (15 min per token)
-            $estimated_time = ($session['current_token'] + 1) * 15;
+            // Calculate estimated waiting time (15 min per token before this one)
+            $estimated_wait_minutes = $session['current_token'] * 15;
+            
+            // Calculate estimated appointment time
+            $session_start_datetime = $session['session_date'] . ' ' . $session['start_time'];
+            $estimated_datetime = strtotime($session_start_datetime) + ($estimated_wait_minutes * 60);
+            $estimated_date = date('Y-m-d', $estimated_datetime);
+            $estimated_time_of_day = date('H:i:s', $estimated_datetime);
+            $estimated_wait_display = $estimated_wait_minutes;
             
             // Create token
             $stmt = $db->prepare("
@@ -67,14 +85,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_token'])) {
                 $session_id,
                 $user['id'],
                 $token_type,
-                $estimated_time
+                $estimated_wait_display
             ]);
             
             $db->commit();
             
             // Get created token
             $stmt = $db->prepare("
-                SELECT ot.*, os.opd_name, os.session_date, os.start_time, mc.name as clinic_name, mc.area
+                SELECT ot.*, os.opd_name, os.session_date, os.start_time, os.end_time, mc.name as clinic_name, mc.area
                 FROM opd_tokens ot
                 JOIN opd_sessions os ON ot.session_id = os.id
                 JOIN medical_centers mc ON os.clinic_id = mc.id
@@ -83,11 +101,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_token'])) {
             $stmt->execute([$db->lastInsertId()]);
             $token = $stmt->fetch();
             
+            // Calculate estimated appointment datetime for display
+            $session_start_datetime = $token['session_date'] . ' ' . $token['start_time'];
+            $estimated_datetime = strtotime($session_start_datetime) + ($token['estimated_time'] * 60);
+            $token['estimated_date'] = date('Y-m-d', $estimated_datetime);
+            $token['estimated_time_display'] = date('g:i A', $estimated_datetime);
+            $token['session_start_formatted'] = date('g:i A', strtotime($token['start_time']));
+            
             $success = $token;
             
         } catch (Exception $e) {
             $db->rollBack();
             $error = 'Failed to book token. Please try again.';
+        }
         }
     }
 }
@@ -149,16 +175,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_token'])) {
                         <div class="font-semibold text-slate-900"><?php echo htmlspecialchars($success['opd_name']); ?></div>
                     </div>
                     <div>
-                        <div class="text-slate-500 mb-1">Date</div>
+                        <div class="text-slate-500 mb-1">Session Date</div>
                         <div class="font-semibold text-slate-900"><?php echo date('M d, Y', strtotime($success['session_date'])); ?></div>
                     </div>
                     <div>
-                        <div class="text-slate-500 mb-1">Time</div>
-                        <div class="font-semibold text-slate-900"><?php echo date('g:i A', strtotime($success['start_time'])); ?></div>
+                        <div class="text-slate-500 mb-1">Session Start Time</div>
+                        <div class="font-semibold text-slate-900"><?php echo htmlspecialchars($success['session_start_formatted']); ?></div>
+                    </div>
+                    <div>
+                        <div class="text-slate-500 mb-1">Your Estimated Time</div>
+                        <div class="font-semibold text-green-600"><?php echo htmlspecialchars($success['estimated_time_display']); ?></div>
                     </div>
                     <div>
                         <div class="text-slate-500 mb-1">Estimated Wait</div>
                         <div class="font-semibold text-orange-600"><?php echo $success['estimated_time']; ?> minutes</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-500 mb-1">Token Number</div>
+                        <div class="font-semibold text-blue-600"><?php echo htmlspecialchars($success['token_number']); ?></div>
                     </div>
                     <div>
                         <div class="text-slate-500 mb-1">Token Type</div>
