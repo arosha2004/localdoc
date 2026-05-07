@@ -3,6 +3,10 @@ session_start();
 require_once 'config/database.php';
 require_once 'helpers/security.php';
 require_once 'helpers/functions.php';
+require_once 'middleware/auth.php';
+
+// Set security headers
+setSecurityHeaders();
 
 // Redirect if already logged in
 if (isset($_SESSION['user'])) {
@@ -19,50 +23,61 @@ if (isset($_SESSION['user'])) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = sanitizeInput($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    
-    if (empty($email) || empty($password)) {
-        $error = 'Email and password are required';
+    // Rate limiting
+    if (!checkRateLimit('login_' . $_SERVER['REMOTE_ADDR'], RATE_LIMIT_ATTEMPTS, RATE_LIMIT_WINDOW)) {
+        $error = 'Too many login attempts. Please try again later.';
     } else {
-        try {
-            $db = getDBConnection();
-            $stmt = $db->prepare("SELECT * FROM users WHERE email = ?");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch();
-            
-            if (!$user || !verifyPassword($password, $user['hashed_password'])) {
-                $error = 'Invalid email or password';
-            } elseif (!$user['is_active']) {
-                if ($user['role'] === 'doctor' && !$user['is_verified']) {
-                    $error = 'Your doctor account is pending admin verification. Please wait for approval.';
-                } else {
-                    $error = 'Your account has been deactivated. Please contact support.';
-                }
-            } else {
-                $_SESSION['user'] = [
-                    'id' => $user['id'],
-                    'full_name' => $user['full_name'],
-                    'email' => $user['email'],
-                    'phone' => $user['phone'],
-                    'role' => $user['role'],
-                    'specialization' => $user['specialization'] ?? null,
-                    'is_active' => $user['is_active'],
-                    'is_verified' => $user['is_verified'],
-                    'created_at' => $user['created_at']
-                ];
+        $email = sanitizeInput($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+        
+        if (empty($email) || empty($password)) {
+            $error = 'Email and password are required';
+        } else {
+            try {
+                $db = getDBConnection();
+                $stmt = $db->prepare("SELECT * FROM users WHERE email = ?");
+                $stmt->execute([$email]);
+                $user = $stmt->fetch();
                 
-                if ($user['role'] === 'admin') {
-                    header('Location: admin/dashboard.php');
-                } elseif ($user['role'] === 'doctor') {
-                    header('Location: doctor/dashboard.php');
+                if (!$user || !verifyPassword($password, $user['hashed_password'])) {
+                    $error = 'Invalid email or password';
+                } elseif (!$user['is_active']) {
+                    if ($user['role'] === 'doctor' && !$user['is_verified']) {
+                        $error = 'Your doctor account is pending admin verification. Please wait for approval.';
+                    } else {
+                        $error = 'Your account has been deactivated. Please contact support.';
+                    }
                 } else {
-                    header('Location: dashboard.php');
+                    // Regenerate session ID to prevent fixation
+                    session_regenerate_id(true);
+                    
+                    $_SESSION['user'] = [
+                        'id' => $user['id'],
+                        'full_name' => $user['full_name'],
+                        'email' => $user['email'],
+                        'phone' => $user['phone'],
+                        'role' => $user['role'],
+                        'specialization' => $user['specialization'] ?? null,
+                        'is_active' => $user['is_active'],
+                        'is_verified' => $user['is_verified'],
+                        'created_at' => $user['created_at']
+                    ];
+                    
+                    // Regenerate CSRF token
+                    regenerateCSRFToken();
+                    
+                    if ($user['role'] === 'admin') {
+                        header('Location: admin/dashboard.php');
+                    } elseif ($user['role'] === 'doctor') {
+                        header('Location: doctor/dashboard.php');
+                    } else {
+                        header('Location: dashboard.php');
+                    }
+                    exit;
                 }
-                exit;
+            } catch (PDOException $e) {
+                $error = 'Login failed. Please try again.';
             }
-        } catch (PDOException $e) {
-            $error = 'Login failed. Please try again.';
         }
     }
 }

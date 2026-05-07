@@ -9,13 +9,17 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
 
-// JWT Configuration
-define('JWT_SECRET', 'your-super-secret-key-change-this-in-production');
+// JWT Configuration - CHANGE THIS IN PRODUCTION!
+define('JWT_SECRET', 'medconnect-' . hash('sha256', 'your-secret-key-change-in-production-' . date('Y')));
 define('JWT_ALGORITHM', 'HS256');
 define('JWT_EXPIRE_MINUTES', 30);
 
 // CORS Configuration
 define('ALLOWED_ORIGINS', '*');
+
+// Rate Limiting
+define('RATE_LIMIT_ATTEMPTS', 5);
+define('RATE_LIMIT_WINDOW', 300); // 5 minutes
 
 /**
  * Database Connection

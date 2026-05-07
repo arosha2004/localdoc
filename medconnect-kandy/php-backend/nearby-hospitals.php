@@ -213,9 +213,6 @@ $user = $_SESSION['user'];
                     </div>
 
                     <div class="flex gap-3">
-                        <a href="tel:${hospital.phone}" class="flex-1 text-center px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold text-sm">
-                            📞 Call
-                        </a>
                         <button onclick="getDirections(${hospital.lat}, ${hospital.lng}, '${hospital.name}')" 
                             class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold text-sm">
                             🗺️ Directions

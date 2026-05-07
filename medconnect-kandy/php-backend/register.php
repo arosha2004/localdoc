@@ -3,6 +3,10 @@ session_start();
 require_once 'config/database.php';
 require_once 'helpers/security.php';
 require_once 'helpers/functions.php';
+require_once 'middleware/auth.php';
+
+// Set security headers
+setSecurityHeaders();
 
 // Redirect if already logged in
 if (isset($_SESSION['user'])) {
@@ -13,77 +17,94 @@ if (isset($_SESSION['user'])) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $full_name = sanitizeInput($_POST['full_name'] ?? '');
-    $email = sanitizeInput($_POST['email'] ?? '');
-    $phone = sanitizeInput($_POST['phone'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $confirm_password = $_POST['confirm_password'] ?? '';
-    
-    if (empty($full_name) || empty($email) || empty($password)) {
-        $error = 'All required fields must be filled';
-    } elseif (!isValidEmail($email)) {
-        $error = 'Invalid email format';
-    } elseif (strlen($password) < 8) {
-        $error = 'Password must be at least 8 characters';
-    } elseif ($password !== $confirm_password) {
-        $error = 'Passwords do not match';
+    // Rate limiting
+    if (!checkRateLimit('register_' . $_SERVER['REMOTE_ADDR'], 3, RATE_LIMIT_WINDOW)) {
+        $error = 'Too many registration attempts. Please try again later.';
     } else {
-        try {
-            $db = getDBConnection();
-            
-            $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
-            $stmt->execute([$email]);
-            if ($stmt->fetch()) {
-                $error = 'An account with this email already exists';
-            } elseif (!empty($phone)) {
-                $stmt = $db->prepare("SELECT id FROM users WHERE phone = ?");
-                $stmt->execute([$phone]);
+        $full_name = sanitizeInput($_POST['full_name'] ?? '');
+        $email = sanitizeInput($_POST['email'] ?? '');
+        $phone = sanitizeInput($_POST['phone'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirm_password = $_POST['confirm_password'] ?? '';
+        
+        if (empty($full_name) || empty($email) || empty($password)) {
+            $error = 'All required fields must be filled';
+        } elseif (!isValidEmail($email)) {
+            $error = 'Invalid email format';
+        } elseif (!isPasswordStrong($password)) {
+            $error = getPasswordStrengthMessage($password);
+        } elseif ($password !== $confirm_password) {
+            $error = 'Passwords do not match';
+        } else {
+            try {
+                $db = getDBConnection();
+                
+                $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+                $stmt->execute([$email]);
                 if ($stmt->fetch()) {
-                    $error = 'An account with this phone number already exists';
+                    $error = 'An account with this email already exists';
+                } elseif (!empty($phone)) {
+                    $stmt = $db->prepare("SELECT id FROM users WHERE phone = ?");
+                    $stmt->execute([$phone]);
+                    if ($stmt->fetch()) {
+                        $error = 'An account with this phone number already exists';
+                    } else {
+                        $hashedPassword = hashPassword($password);
+                        $stmt = $db->prepare("
+                            INSERT INTO users (full_name, email, phone, hashed_password, role, is_active, is_verified, created_at)
+                            VALUES (?, ?, ?, ?, 'patient', 1, 0, NOW())
+                        ");
+                        $stmt->execute([$full_name, $email, $phone, $hashedPassword]);
+                        
+                        // Regenerate session ID
+                        session_regenerate_id(true);
+                        
+                        $_SESSION['user'] = [
+                            'id' => $db->lastInsertId(),
+                            'full_name' => $full_name,
+                            'email' => $email,
+                            'phone' => $phone,
+                            'role' => 'patient',
+                            'is_active' => true,
+                            'is_verified' => false
+                        ];
+                        
+                        // Regenerate CSRF token
+                        regenerateCSRFToken();
+                        
+                        header('Location: dashboard.php');
+                        exit;
+                    }
                 } else {
                     $hashedPassword = hashPassword($password);
                     $stmt = $db->prepare("
                         INSERT INTO users (full_name, email, phone, hashed_password, role, is_active, is_verified, created_at)
                         VALUES (?, ?, ?, ?, 'patient', 1, 0, NOW())
                     ");
-                    $stmt->execute([$full_name, $email, $phone, $hashedPassword]);
+                    $stmt->execute([$full_name, $email, null, $hashedPassword]);
+                    
+                    // Regenerate session ID
+                    session_regenerate_id(true);
                     
                     $_SESSION['user'] = [
                         'id' => $db->lastInsertId(),
                         'full_name' => $full_name,
                         'email' => $email,
-                        'phone' => $phone,
+                        'phone' => null,
                         'role' => 'patient',
                         'is_active' => true,
                         'is_verified' => false
                     ];
                     
+                    // Regenerate CSRF token
+                    regenerateCSRFToken();
+                    
                     header('Location: dashboard.php');
                     exit;
                 }
-            } else {
-                $hashedPassword = hashPassword($password);
-                $stmt = $db->prepare("
-                    INSERT INTO users (full_name, email, phone, hashed_password, role, is_active, is_verified, created_at)
-                    VALUES (?, ?, ?, ?, 'patient', 1, 0, NOW())
-                ");
-                $stmt->execute([$full_name, $email, null, $hashedPassword]);
-                
-                $_SESSION['user'] = [
-                    'id' => $db->lastInsertId(),
-                    'full_name' => $full_name,
-                    'email' => $email,
-                    'phone' => null,
-                    'role' => 'patient',
-                    'is_active' => true,
-                    'is_verified' => false
-                ];
-                
-                header('Location: dashboard.php');
-                exit;
+            } catch (PDOException $e) {
+                $error = 'Registration failed. Please try again.';
             }
-        } catch (PDOException $e) {
-            $error = 'Registration failed. Please try again.';
         }
     }
 }

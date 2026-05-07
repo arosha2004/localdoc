@@ -6,14 +6,33 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ router.php [L,QSA]
 
-# Allow CORS for API requests
-Header always set Access-Control-Allow-Origin "*"
-Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+# Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.tailwindcss.com; style-src 'self' 'unsafe-inline';"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+    
+    # Allow CORS for API requests
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
 
 # Handle preflight requests
 RewriteCond %{REQUEST_METHOD} OPTIONS
 RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Prevent access to sensitive files
+<FilesMatch "\.(env|sql|md|log|bak|config)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Disable directory browsing
+Options -Indexes
 
 # Default to index.php
 DirectoryIndex index.php

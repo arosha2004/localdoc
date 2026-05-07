@@ -3,48 +3,57 @@ session_start();
 require_once 'config/database.php';
 require_once 'helpers/security.php';
 require_once 'helpers/functions.php';
+require_once 'middleware/auth.php';
+
+// Set security headers
+setSecurityHeaders();
 
 $error = '';
 $success = '';
 
 // Handle forgot password request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = sanitizeInput($_POST['email'] ?? '');
-    
-    if (empty($email)) {
-        $error = 'Email is required';
-    } elseif (!isValidEmail($email)) {
-        $error = 'Invalid email format';
+    // Rate limiting
+    if (!checkRateLimit('forgot_password_' . $_SERVER['REMOTE_ADDR'], 3, RATE_LIMIT_WINDOW)) {
+        $error = 'Too many requests. Please try again later.';
     } else {
-        try {
-            $db = getDBConnection();
-            $stmt = $db->prepare("SELECT id, full_name, email FROM users WHERE email = ?");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch();
-            
-            if (!$user) {
-                // Don't reveal if email exists or not (security best practice)
-                $success = 'If an account exists with that email, a reset link has been sent.';
-            } else {
-                // Generate reset token
-                $reset_token = bin2hex(random_bytes(32));
-                $reset_expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+        $email = sanitizeInput($_POST['email'] ?? '');
+        
+        if (empty($email)) {
+            $error = 'Email is required';
+        } elseif (!isValidEmail($email)) {
+            $error = 'Invalid email format';
+        } else {
+            try {
+                $db = getDBConnection();
+                $stmt = $db->prepare("SELECT id, full_name, email FROM users WHERE email = ?");
+                $stmt->execute([$email]);
+                $user = $stmt->fetch();
                 
-                // Store reset token in database
-                $stmt = $db->prepare("UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?");
-                $stmt->execute([$reset_token, $reset_expires, $user['id']]);
-                
-                // In production, send email with reset link
-                // For demo, show the reset link directly
-                $basePath = dirname($_SERVER['PHP_SELF']);
-                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-                $host = $_SERVER['HTTP_HOST'];
-                $reset_link = $protocol . '://' . $host . $basePath . '/reset-password.php?token=' . $reset_token;
-                
-                $success = 'Password reset link generated! In production, this would be emailed to you. For demo: <br><br><a href="' . $reset_link . '" class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700">Click here to reset password</a>';
+                if (!$user) {
+                    // Don't reveal if email exists or not (security best practice)
+                    $success = 'If an account exists with that email, a reset link has been sent.';
+                } else {
+                    // Generate reset token
+                    $reset_token = generateSecureToken(32);
+                    $reset_expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+                    
+                    // Store reset token in database
+                    $stmt = $db->prepare("UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?");
+                    $stmt->execute([$reset_token, $reset_expires, $user['id']]);
+                    
+                    // In production, send email with reset link
+                    // For demo, show the reset link directly
+                    $basePath = dirname($_SERVER['PHP_SELF']);
+                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                    $host = $_SERVER['HTTP_HOST'];
+                    $reset_link = $protocol . '://' . $host . $basePath . '/reset-password.php?token=' . $reset_token;
+                    
+                    $success = 'Password reset link generated! In production, this would be emailed to you. For demo: <br><br><a href="' . $reset_link . '" class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700">Click here to reset password</a>';
+                }
+            } catch (PDOException $e) {
+                $error = 'Failed to process request. Please try again.';
             }
-        } catch (PDOException $e) {
-            $error = 'Failed to process request. Please try again.';
         }
     }
 }

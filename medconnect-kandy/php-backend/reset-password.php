@@ -3,11 +3,15 @@ session_start();
 require_once 'config/database.php';
 require_once 'helpers/security.php';
 require_once 'helpers/functions.php';
+require_once 'middleware/auth.php';
+
+// Set security headers
+setSecurityHeaders();
 
 $error = '';
 $success = '';
 $valid_token = false;
-$token = sanitizeInput($_GET['token'] ?? '');
+$token = $_GET['token'] ?? '';
 
 // Verify token on page load
 if (!empty($token)) {
@@ -29,28 +33,33 @@ if (!empty($token)) {
 
 // Handle password reset
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $valid_token) {
-    $new_password = $_POST['new_password'] ?? '';
-    $confirm_password = $_POST['confirm_password'] ?? '';
-    
-    if (empty($new_password) || empty($confirm_password)) {
-        $error = 'Both password are required';
-    } elseif ($new_password !== $confirm_password) {
-        $error = 'Passwords do not match';
-    } elseif (strlen($new_password) < 8) {
-        $error = 'Password must be at least 8 characters';
+    // Rate limiting
+    if (!checkRateLimit('reset_password_' . $_SERVER['REMOTE_ADDR'], 3, RATE_LIMIT_WINDOW)) {
+        $error = 'Too many attempts. Please try again later.';
     } else {
-        try {
-            $db = getDBConnection();
-            $hashedPassword = hashPassword($new_password);
-            
-            // Update password and clear reset token
-            $stmt = $db->prepare("UPDATE users SET hashed_password = ?, reset_token = NULL, reset_token_expires = NULL WHERE reset_token = ?");
-            $stmt->execute([$hashedPassword, $token]);
-            
-            $success = 'Password reset successful! You can now login with your new password.';
-            $valid_token = false; // Hide form after success
-        } catch (PDOException $e) {
-            $error = 'Failed to reset password. Please try again.';
+        $new_password = $_POST['new_password'] ?? '';
+        $confirm_password = $_POST['confirm_password'] ?? '';
+        
+        if (empty($new_password) || empty($confirm_password)) {
+            $error = 'Both password are required';
+        } elseif (!isPasswordStrong($new_password)) {
+            $error = getPasswordStrengthMessage($new_password);
+        } elseif ($new_password !== $confirm_password) {
+            $error = 'Passwords do not match';
+        } else {
+            try {
+                $db = getDBConnection();
+                $hashedPassword = hashPassword($new_password);
+                
+                // Update password and clear reset token
+                $stmt = $db->prepare("UPDATE users SET hashed_password = ?, reset_token = NULL, reset_token_expires = NULL WHERE reset_token = ?");
+                $stmt->execute([$hashedPassword, $token]);
+                
+                $success = 'Password reset successful! You can now login with your new password.';
+                $valid_token = false; // Hide form after success
+            } catch (PDOException $e) {
+                $error = 'Failed to reset password. Please try again.';
+            }
         }
     }
 }
